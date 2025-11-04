@@ -1,10 +1,2 @@
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open('2time-cache-v1').then((cache) => cache.addAll(['/','/index.html','/manifest.json']))
-  );
-});
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
-  );
-});
+self.addEventListener('install',e=>{e.waitUntil(caches.open('2time-v3').then(c=>c.addAll(['/','/index.html','/manifest.json'])))});
+self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})
