@@ -1,13 +1,1 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-
-export default function NeonHeader(){
-  return (
-    <header className="p-4 flex items-center justify-between">
-      <Link to="/" className="text-2xl font-bold tracking-wide">
-        <span className="text-neon">2</span><span className="text-neon2">Time</span>
-      </Link>
-      <div className="text-sm opacity-70">MVP</div>
-    </header>
-  )
-}
+import React from 'react';import { Link } from 'react-router-dom';export default function NeonHeader(){return(<header className='p-4 flex items-center justify-between'><Link to='/' className='text-2xl font-bold tracking-wide'><span className='text-neon'>2</span><span className='text-neon2'>Time</span></Link><div className='text-sm opacity-70'>MVP v3</div></header>)}
