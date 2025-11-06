@@ -1,8 +1,16 @@
-# 2Time MVP v3
-- Drag&Drop таймеров на папки (и в «Все» для снятия папки).
-- .ICS теперь с локальной TZ (TZID) и корректным daily-временем.
-- Ссылки «Поделиться»: `/t/local?d=...` (короче, открываются везде).
-- Папки: rename/emoji/delete. Таймеры: перенос через меню и DnD.
-- PWA и SPA rewrites в `vercel.json`.
+# 2Time MVP v6.2 — Short links: retry + trimmed + one-time
+**Новое**
+- Ретраи при коллизии slug (до 5 попыток, длина слога растёт).
+- На публичную ссылку кладём **только нужные поля** (title, kind, bg, и либо endsAt, либо durationMsStr+createdAtMs).
+- **Одноразовые ссылки**: при создании можно выбрать; при первом открытии документ удаляется.
 
-Вкл. пуши позже: добавим VAPID и серверный endpoint, чтобы присылать Web Push (iOS поддерживает в PWA).
+**Правила Firestore (минимальные для теста)**
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /links/{slug} { allow read, write: if true; } // для MVP
+  }
+}
+```
+Потом можно сузить: `allow create: if true; allow read: if resource.data.oneTime == false;` и удалять одноразовые на Cloud Functions.

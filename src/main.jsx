@@ -5,4 +5,4 @@ import './index.css'
 import App from './screens/App.jsx'
 import TimerPublic from './screens/TimerPublic.jsx'
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{})})}
-createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRouter><Routes><Route path='/' element={<App/>}/><Route path='/t/:id' element={<TimerPublic/>}/><Route path='/t/local' element={<TimerPublic/>}/></Routes></BrowserRouter></React.StrictMode>)
+createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRouter><Routes><Route path='/' element={<App/>}/><Route path='/t/:id' element={<TimerPublic/>}/><Route path='/t/local' element={<TimerPublic/>}/><Route path='/s/:sid' element={<TimerPublic/>}/></Routes></BrowserRouter></React.StrictMode>)

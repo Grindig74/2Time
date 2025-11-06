@@ -1,7 +1,7 @@
 {
-  "name": "2time-mvp-v3",
+  "name": "2time-mvp-v6-2",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.6.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
