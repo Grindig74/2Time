@@ -94,7 +94,7 @@ function TimerPublic(){
           </div>
         </div>
       )}
-      <ForecastDrawer open={open} onClose={()=>setOpen(false)}/>
+      {open && <ForecastDrawer open onClose={()=>setOpen(false)}/>}
     </div>
   )
 }
