@@ -1,7 +1,7 @@
 import React from 'react'
 import { WeatherCtx } from '../weather/WeatherContext'
-import CityPicker from './CityPicker'
-import WIcon from './WIcon'
+import WeatherIcon from './WeatherIcon'
+import { codeToIcon } from '../lib/weather'
 
 function dayName(dstr){
   const d=new Date(dstr); return d.toLocaleDateString('ru-RU',{weekday:'short', day:'2-digit'})
@@ -19,21 +19,19 @@ export default function ForecastDrawer({open,onClose}){
             <button onClick={onClose} className="text-xs bg-white/10 px-2 py-1 rounded">Закрыть</button>
           </div>
         </div>
-
-        <CityPicker onPick={(p)=>setManualLocation(p.name, p.lat, p.lon)}/>
-
+        <div className="mb-3">
+          <input placeholder="Сменить город (напр. Амстердам)" className="w-full glass px-3 py-2 rounded" onKeyDown={async(e)=>{if(e.key==='Enter'){const ok=await setManualLocation(e.currentTarget.value); if(ok){ e.currentTarget.value=''; refresh(); }}}}/>
+          <div className="text-xs opacity-70 mt-1">Нажми Enter для применения</div>
+        </div>
         {loading && <div className="opacity-70">Загружаю…</div>}
         {!loading && data && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {data.daily.time.map((t,i)=>(
               <div key={t} className="glass p-3 rounded-xl">
                 <div className="text-sm opacity-80">{dayName(t)}</div>
-                <div className="text-xl font-semibold flex items-center gap-2">
-                  <WIcon code={data.daily.weather_code[i]}/> {Math.round(data.daily.temperature_2m_min[i])}…{Math.round(data.daily.temperature_2m_max[i])}°
-                </div>
+                <div className="text-xl font-semibold flex items-center"><WeatherIcon code={codeToIcon(data.daily.weather_code[i])}/>{Math.round(data.daily.temperature_2m_min[i])}…{Math.round(data.daily.temperature_2m_max[i])}°</div>
                 <div className="text-xs opacity-70">Осадки: {Math.round(data.daily.precipitation_sum[i]||0)} мм</div>
-                <div className="text-xs opacity-70">Восход: {new Date(data.daily.sunrise[i]).toLocaleTimeString()}</div>
-                <div className="text-xs opacity-70">Закат: {new Date(data.daily.sunset[i]).toLocaleTimeString()}</div>
+                <div className="text-xs opacity-70">Код: {data.daily.weather_code[i]}</div>
               </div>
             ))}
           </div>

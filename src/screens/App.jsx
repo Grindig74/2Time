@@ -1,9 +1,11 @@
-import React,{useEffect,useMemo,useState} from 'react'
+import React,{useEffect,useMemo,useState,useContext} from 'react'
 import Backdrop from '../components/Backdrop';import NeonHeader from '../components/NeonHeader';import TimerCard,{ remainingMsBig } from '../components/TimerCard'
 import { loadState, saveState, uid } from '../lib/storage';import { backgroundForTitle } from '../lib/theme';import { saveTimerToCloud, saveLinkToCloud, findLinksByTimerId, deleteLinkFromCloud, deleteTimerFromCloud, hasFirebaseConfig } from '../lib/firebase'
 import { bigAddStr, briefHuman, hhmmss, YEAR, SOFT_YEARS } from '../lib/format'
 import { WeatherProvider, WeatherCtx } from '../weather/WeatherContext'
 import ForecastDrawer from '../components/ForecastDrawer'
+import WeatherIcon from '../components/WeatherIcon'
+import { codeToIcon } from '../lib/weather'
 
 const SLUG_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 const genSlug = (len=7)=>Array.from({length:len},()=>SLUG_CHARS[Math.floor(Math.random()*SLUG_CHARS.length)]).join('')
@@ -17,6 +19,7 @@ function App(){
   const [creating,setCreating]=useState(false)
   const [newT,setNewT]=useState({title:'',kind:'abs',endsAt:'',durationMsStr:'',folderId:null,bg:'',createdAtMs:Date.now()})
   const [forecastOpen,setForecastOpen]=useState(false)
+  const { place, data } = useContext(WeatherCtx)
 
   useEffect(()=>{setTimers(ts=>ts.map(t=> t.kind? t : {...t, kind:'abs', createdAtMs:t.createdAtMs||Date.now()} ))},[])
 
@@ -102,75 +105,49 @@ function App(){
     alert('Ссылка скопирована: '+url)
   }
 
-  return (<AppScaffold
-    onAddTimer={()=>setCreating(true)}
-    activeFolder={activeFolder}
-    setActiveFolder={setActiveFolder}
-    folders={folders}
-    addFolder={addFolder}
-    renameFolder={renameFolder}
-    emojiFolder={emojiFolder}
-    deleteFolder={deleteFolder}
-    activeSorted={activeSorted}
-    completedSorted={completedSorted}
-    onShare={copyShareLink}
-    onDelete={removeTimer}
-    creating={creating}
-    newT={newT}
-    setNewT={setNewT}
-    onSave={saveNewTimer}
-    closeCreate={()=>setCreating(false)}
-    openForecast={()=>setForecastOpen(true)}
-    forecastOpen={forecastOpen}
-    closeForecast={()=>setForecastOpen(false)}
-  />)
-}
-
-function AppScaffold(props){
-  const { place } = React.useContext(WeatherCtx)
   return (<div>
     <Backdrop/>
-    <NeonHeader right={<button onClick={props.openForecast} className='text-xs bg-white/10 px-2 py-1 rounded'>{place?`${place}`:'Погода'}</button>}/>
+    <NeonHeader right={<button onClick={()=>setForecastOpen(true)} className='text-xs bg-white/10 px-2 py-1 rounded'>{place?`${place}`:'Погода'}</button>}/>
     <div className="px-4 pb-2 flex items-center gap-2 overflow-x-auto">
-      <button onClick={props.addFolder} className="glass px-3 py-2 rounded-lg text-sm hover:shadow-neon">+ Папка</button>
-      {props.folders.map(f=>(
-        <div key={f.id} className="flex items-center gap-1" onDragOver={(e)=>e.preventDefault()} onDrop={(e)=>props.onDropToFolder?props.onDropToFolder(f.id)(e):null}>
-          <button className={`glass px-3 py-2 rounded-lg text-sm ${props.activeFolder===f.id?'ring-1 ring-neon shadow-neon':''}`} onClick={()=>props.setActiveFolder(f.id)}>
+      <button onClick={addFolder} className="glass px-3 py-2 rounded-lg text-sm hover:shadow-neon">+ Папка</button>
+      {folders.map(f=>(
+        <div key={f.id} className="flex items-center gap-1" onDragOver={(e)=>e.preventDefault()} onDrop={onDropToFolder(f.id)}>
+          <button className={`glass px-3 py-2 rounded-lg text-sm ${activeFolder===f.id?'ring-1 ring-neon shadow-neon':''}`} onClick={()=>setActiveFolder(f.id)}>
             {f.emoji||'🗂️'} {f.name}
           </button>
           <button title="Изменить" className="px-2 py-2 text-xs opacity-70 hover:opacity-100"
-                  onClick={()=>{const act=prompt('Действие: rename | emoji | delete','rename');if(!act)return;if(act==='rename')props.renameFolder(f.id);else if(act==='emoji')props.emojiFolder(f.id);else if(act==='delete')props.deleteFolder(f.id);}}>⋯</button>
+                  onClick={()=>{const act=prompt('Действие: rename | emoji | delete','rename');if(!act)return;if(act==='rename')renameFolder(f.id);else if(act==='emoji')emojiFolder(f.id);else if(act==='delete')deleteFolder(f.id);}}>⋯</button>
         </div>
       ))}
-      <div onDragOver={(e)=>e.preventDefault()}>
-        <button className={`glass px-3 py-2 rounded-lg text-sm ${props.activeFolder===null?'ring-1 ring-neon':''}`} onClick={()=>props.setActiveFolder(null)}>Все</button>
+      <div onDragOver={(e)=>e.preventDefault()} onDrop={onDropToFolder(null)}>
+        <button className={`glass px-3 py-2 rounded-lg text-sm ${activeFolder===null?'ring-1 ring-neon':''}`} onClick={()=>setActiveFolder(null)}>Все</button>
       </div>
     </div>
 
     <div className="px-4 py-2 flex gap-2">
-      <button onClick={props.onAddTimer} className="glass px-3 py-2 rounded-lg hover:shadow-neon">+ Таймер</button>
+      <button onClick={()=>setCreating(true)} className="glass px-3 py-2 rounded-lg hover:shadow-neon">+ Таймер</button>
     </div>
 
     <div className="grid gap-4 px-4">
-      {props.activeSorted.map(t=>(
-        <div key={t.id} className="relative glass p-4 rounded-xl" style={{backgroundImage:t.bg||'none'}} draggable onDragStart={(e)=>e.dataTransfer.setData('text/timer-id', t.id)}>
+      {activeSorted.map(t=>(
+        <div key={t.id} className="relative glass p-4 rounded-xl" style={{backgroundImage:t.bg||backgroundForTitle(t.title)}} draggable onDragStart={(e)=>onDragStartTimer(e,t.id)}>
           <div className="text-xs opacity-70">{t.kind==='abs'?new Date(t.endsAt).toLocaleString():'длительный таймер'}</div>
           <div className="text-xl font-semibold mb-2">{t.title}</div>
           <TimerCard t={t}/>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={()=>props.onShare(t)} className="text-xs bg-white/10 px-2 py-1 rounded">Поделиться</button>
-            <button onClick={()=>props.onDelete(t.id)} className="text-xs bg-white/10 px-2 py-1 rounded">Удалить</button>
+            <button onClick={()=>copyShareLink(t)} className="text-xs bg-white/10 px-2 py-1 rounded">Поделиться</button>
+            <button onClick={()=>removeTimer(t.id)} className="text-xs bg-white/10 px-2 py-1 rounded">Удалить</button>
           </div>
         </div>
       ))}
     </div>
 
-    {props.completedSorted.length>0 && (
+    {completedSorted.length>0 && (
       <div className="opacity-75 mt-6 px-4">
         <div className="text-xs mb-2">Завершённые</div>
         <div className="grid gap-4">
-          {props.completedSorted.map(t=>(
-            <div key={t.id} className="relative glass p-4 rounded-xl opacity-60" style={{backgroundImage:t.bg||'none'}}>
+          {completedSorted.map(t=>(
+            <div key={t.id} className="relative glass p-4 rounded-xl opacity-60" style={{backgroundImage:t.bg||backgroundForTitle(t.title)}}>
               <div className="text-xs">{t.kind==='abs'?new Date(t.endsAt).toLocaleString():'длительный таймер'}</div>
               <div className="text-xl font-semibold mb-2">{t.title}</div>
               <div className="text-xs">Завершён: {new Date(t.completedAt).toLocaleString()}</div>
@@ -180,14 +157,14 @@ function AppScaffold(props){
       </div>
     )}
 
-    {props.creating&&(<NewTimerModal newT={props.newT} setNewT={props.setNewT} onClose={props.closeCreate} onSave={props.onSave} />)}
-
-    <ForecastDrawer open={props.forecastOpen} onClose={props.closeForecast}/>
+    {creating&&(<NewTimerModal newT={newT} setNewT={setNewT} onClose={()=>setCreating(false)} onSave={saveNewTimer} />)}
+    <ForecastDrawer open={forecastOpen} onClose={()=>setForecastOpen(false)}/>
   </div>)
 }
 
 function NewTimerModal({newT,setNewT,onClose,onSave}){
   const [tab,setTab] = React.useState('quick')
+  const { data } = useContext(WeatherCtx)
   const addMs=(ms)=> setNewT(s=>({ ...s, kind:'dur', durationMsStr: bigAddStr(s.durationMsStr, String(ms)), endsAt:'', createdAtMs: Date.now() }))
   const durationMs = BigInt(newT.kind==='dur' ? (newT.durationMsStr||'0') : '0')
   const nowNum = Date.now()
@@ -204,6 +181,22 @@ function NewTimerModal({newT,setNewT,onClose,onSave}){
     }
   }catch{ fireAtTs = null }
   const fireAtStr = fireAtTs? new Date(fireAtTs).toLocaleString() : '—'
+
+  let endForecast = null
+  if(data?.daily?.time && fireAtTs){
+    const fireDate = new Date(fireAtTs).toISOString().slice(0,10)
+    const idx = data.daily.time.indexOf(fireDate)
+    if(idx>=0){
+      endForecast = {
+        tmin: Math.round(data.daily.temperature_2m_min[idx]),
+        tmax: Math.round(data.daily.temperature_2m_max[idx]),
+        precip: Math.round(data.daily.precipitation_sum[idx]||0),
+        code: data.daily.weather_code[idx]
+      }
+    }
+  }
+
+  const softWarn = (durationMs / (365n*24n*60n*60n*1000n)) >= 1000n
 
   return (<div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4">
     <div className="glass w-full max-w-md p-4 rounded-2xl">
@@ -235,6 +228,8 @@ function NewTimerModal({newT,setNewT,onClose,onSave}){
             <div className="font-mono">{fireAtStr}</div>
           </>)}
         </div>
+
+        {softWarn && <div className="text-xs text-amber-300 mb-2">Это больше 1000 лет — всё ок, просто предупреждаю.</div>}
       </>)}
 
       {tab==='date' && (<>
@@ -242,9 +237,14 @@ function NewTimerModal({newT,setNewT,onClose,onSave}){
         <input type="datetime-local" className="w-full glass px-3 py-2 rounded-lg mb-3" value={newT.endsAt||''} onChange={e=>setNewT(s=>({...s,kind:'abs', endsAt:e.target.value}))}/>
       </>)}
 
+      {endForecast && (<div className="hint rounded-lg p-3 text-sm mb-3">
+        <div className="opacity-70">Погода в день окончания</div>
+        <div className="flex items-center"><span className="mr-2"><WeatherIcon code={codeToIcon(endForecast.code)}/></span>Темп.: {endForecast.tmin}…{endForecast.tmax}° · Осадки: {endForecast.precip} мм</div>
+      </div>)}
+
       <label className="block text-sm opacity-80 mb-1">Фон (опционально)</label>
       <input type="file" accept="image/*" onChange={(e)=>{const f=e.target.files?.[0];if(!f)return;const url=URL.createObjectURL(f);setNewT(s=>({...s,bg:`url(${url})`}))}} className="mb-3"/>
-      <div className="h-24 rounded-lg" style={{backgroundImage:newT.bg||'none'}}/>
+      <div className="h-24 rounded-lg" style={{backgroundImage:newT.bg}}/>
 
       <div className="mt-4 flex gap-2 justify-end">
         <button onClick={onClose} className="px-3 py-2 rounded-lg bg-white/10">Отмена</button>
