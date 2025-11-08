@@ -2,7 +2,7 @@ import React,{useEffect,useMemo,useState} from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Backdrop from '../components/Backdrop'
 import NeonHeader from '../components/NeonHeader'
-import { fetchTimerFromCloud, fetchLinkFromCloud, deleteLinkFromCloud, hasFirebaseConfig } from '../lib/firebase'
+import { fetchTimerFromCloud, fetchLinkFromCloud, hasFirebaseConfig } from '../lib/firebase'
 import { backgroundForTitle } from '../lib/theme'
 import TimerCard from '../components/TimerCard'
 
@@ -15,11 +15,15 @@ export default function TimerPublic(){
   useEffect(()=>{(async()=>{
     if(d) return
     if(sid && hasFirebaseConfig()){
-      const t=await fetchLinkFromCloud(sid)
-      if(t){
-        setTimer(t)
-        if(t.oneTime) try{ await deleteLinkFromCloud(sid) }catch{}
-        return
+      const L=await fetchLinkFromCloud(sid)
+      if(L){
+        if(L.type==='ptr' && L.timerId){
+          const t=await fetchTimerFromCloud(L.timerId)
+          if(t){ setTimer(t); return }
+          setTimer(null); return
+        } else {
+          setTimer(L); return
+        }
       }
     }
     if(id && hasFirebaseConfig()){
@@ -28,5 +32,5 @@ export default function TimerPublic(){
   })()},[id,d,sid])
 
   const bg=useMemo(()=>timer?.bg||backgroundForTitle(timer?.title||''),[timer])
-  return(<div><Backdrop/><NeonHeader/>{!timer&&<div className='px-4 pt-8 opacity-70'>Таймер не найден.</div>}{timer&&(<div className='px-4 pt-6'><div className='glass p-6 rounded-2xl' style={{backgroundImage:bg}}><div className='text-xs opacity-70'>{timer.kind==='abs'?new Date(timer.endsAt).toLocaleString():'длительный таймер'}</div><div className='text-2xl font-bold mb-4'>{timer.title}</div><TimerCard t={timer}/></div></div>)}</div>)
+  return(<div><Backdrop/><NeonHeader/>{!timer&&<div className='px-4 pt-8 opacity-70'>Таймер не найден.</div>}{timer&&(<div className='px-4 pt-6'><div className='glass p-6 rounded-2xl' style={{backgroundImage:bg}}><div className='text-xs opacity-70'>{timmer?.kind==='abs'?new Date(timer.endsAt).toLocaleString():'длительный таймер'}</div><div className='text-2xl font-bold mb-4'>{timer.title}</div><TimerCard t={timer}/></div></div>)}</div>)
 }

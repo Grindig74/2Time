@@ -1,16 +1,24 @@
-# 2Time MVP v6.2 — Short links: retry + trimmed + one-time
-**Новое**
-- Ретраи при коллизии slug (до 5 попыток, длина слога растёт).
-- На публичную ссылку кладём **только нужные поля** (title, kind, bg, и либо endsAt, либо durationMsStr+createdAtMs).
-- **Одноразовые ссылки**: при создании можно выбрать; при первом открытии документ удаляется.
+# 2Time MVP v6.3 — Pointer links + auto-cleanup
+**Что нового**
+- Короткая ссылка `/s/:slug` хранит только `{ type:'ptr', timerId }`.
+- Публичная страница подтягивает `timers/{id}`. Если таймер удалён — ссылка показывает «Таймер не найден».
+- Удаление таймера в приложении также удаляет все ссылки `links` с этим `timerId`.
 
-**Правила Firestore (минимальные для теста)**
-```
+**Безопасные правила Firestore (клиент создаёт, но не редактирует):**
+```js
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /links/{slug} { allow read, write: if true; } // для MVP
+    match /links/{slug} {
+      allow read: if true;
+      allow create: if request.auth == null && !exists(/databases/$(database)/documents/links/$(slug));
+      allow update, delete: if false;
+    }
+    match /timers/{id} {
+      allow read: if true;
+      allow create: if request.auth == null && !exists(/databases/$(database)/documents/timers/$(id));
+      allow update, delete: if false;
+    }
   }
 }
 ```
-Потом можно сузить: `allow create: if true; allow read: if resource.data.oneTime == false;` и удалять одноразовые на Cloud Functions.

@@ -1,16 +1,10 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import Backdrop from '../components/Backdrop';import NeonHeader from '../components/NeonHeader';import TimerCard,{ remainingMsBig } from '../components/TimerCard'
-import { loadState, saveState, uid } from '../lib/storage';import { backgroundForTitle } from '../lib/theme';import { saveTimerToCloud, saveLinkToCloud, hasFirebaseConfig } from '../lib/firebase'
+import { loadState, saveState, uid } from '../lib/storage';import { backgroundForTitle } from '../lib/theme';import { saveTimerToCloud, saveLinkToCloud, findLinksByTimerId, deleteLinkFromCloud, deleteTimerFromCloud, hasFirebaseConfig } from '../lib/firebase'
 import { bigAddStr, briefHuman, hhmmss, YEAR, SOFT_YEARS } from '../lib/format'
 
 const SLUG_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 const genSlug = (len=7)=>Array.from({length:len},()=>SLUG_CHARS[Math.floor(Math.random()*SLUG_CHARS.length)]).join('')
-
-const toPublicPayload = (t)=>{
-  const base = { title:t.title||'', kind:t.kind, bg:t.bg||'' }
-  if(t.kind==='abs') return { ...base, endsAt:t.endsAt }
-  return { ...base, durationMsStr:t.durationMsStr, createdAtMs:t.createdAtMs||Date.now() }
-}
 
 export default function App(){
   const [timers,setTimers]=useState(()=>loadState('timers',[]))
@@ -71,34 +65,34 @@ export default function App(){
     if(hasFirebaseConfig()){try{await saveTimerToCloud(id,t)}catch(e){console.warn('Cloud save failed',e)}}
   }
 
-  function removeTimer(id){if(!confirm('Удалить таймер?'))return;setTimers(timers.filter(t=>t.id!==id))}
+  async function removeTimer(id){
+    if(!confirm('Удалить таймер?'))return
+    setTimers(timers.filter(t=>t.id!==id))
+    if(hasFirebaseConfig()){
+      try{
+        await deleteTimerFromCloud(id)
+        const links = await findLinksByTimerId(id)
+        await Promise.all(links.map(l=>deleteLinkFromCloud(l.slug)))
+      }catch(e){ console.warn('Cloud cleanup failed', e) }
+    }
+  }
+
   function onDragStartTimer(e,id){e.dataTransfer.setData('text/timer-id', id)}
   function onDropToFolder(folderId){return (e)=>{const id=e.dataTransfer.getData('text/timer-id');if(!id)return;e.preventDefault();setTimers(ts=>ts.map(t=>t.id===id?{...t,folderId}:t))}}
 
   async function copyShareLink(t){
-    const one = confirm('Сделать одноразовую ссылку? Нажми «Отмена» — будет обычная.')
     if(hasFirebaseConfig()){
       try{
-        const payload = { ...toPublicPayload(t), oneTime: !!one }
-        for(let i=0;i<5;i++){
-          const slug = genSlug(7+i) // слегка увеличиваем длину при ретраях
-          try{
-            await saveLinkToCloud(slug, payload)
-            const url = `${location.origin}/s/${slug}`
-            await navigator.clipboard.writeText(url)
-            alert((one?'Одноразовая':'Короткая')+' ссылка скопирована: '+url)
-            return
-          }catch(e){
-            // вероятная коллизия — пробуем снова
-            if(i===4) throw e
-          }
-        }
-      }catch(e){
-        console.warn('Short link failed, fallback', e)
-      }
+        await saveTimerToCloud(t.id, t) // ensure exists
+        const slug = genSlug(7)
+        await saveLinkToCloud(slug, { type:'ptr', timerId: t.id })
+        const url = `${location.origin}/s/${slug}`
+        await navigator.clipboard.writeText(url)
+        alert('Короткая ссылка (указатель) скопирована: '+url)
+        return
+      }catch(e){ console.warn('Short pointer link failed, fallback', e) }
     }
-    // fallback: local
-    const b64=btoa(unescape(encodeURIComponent(JSON.stringify(toPublicPayload(t))))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')
+    const b64=btoa(unescape(encodeURIComponent(JSON.stringify(t)))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')
     const url=`${location.origin}/t/local?d=${b64}`
     await navigator.clipboard.writeText(url)
     alert('Ссылка скопирована: '+url)
@@ -189,7 +183,7 @@ function NewTimerModal({newT,setNewT,onClose,onSave}){
         <button className={`px-3 py-1 rounded ${tab==='date'?'bg-white/20':'bg-white/10'}`} onClick={()=>setTab('date')}>По дате</button>
       </div>
 
-      {tab==='quick' && (<>
+      {tab==='quick' and (<>
         <div className="flex flex-wrap gap-2 mb-3">
           {[30e3,5*60e3,15*60e3,30*60e3,60*60e3,24*60*60e3,7*24*60*60e3,30*24*60*60e3].map((ms,i)=>(
             <button key={i} onClick={()=>addMs(ms)} className="px-2 py-1 bg-white/10 rounded">
@@ -201,7 +195,7 @@ function NewTimerModal({newT,setNewT,onClose,onSave}){
         <div className="hint rounded-lg p-3 text-sm mb-3">
           <div className="opacity-70">Сейчас</div>
           <div className="font-mono">{nowStr}</div>
-          {durationMs>0n && (<>
+          {durationMs>0n and (<>
             <div className="opacity-70 mt-2">Добавишь</div>
             <div className="font-mono">{addStrFull}</div>
             <div className="opacity-70 mt-2">Сработает</div>
@@ -209,10 +203,10 @@ function NewTimerModal({newT,setNewT,onClose,onSave}){
           </>)}
         </div>
 
-        {softWarn && <div className="text-xs text-amber-300 mb-2">Это больше 1000 лет — всё ок, просто предупреждаю.</div>}
+        {softWarn and <div className="text-xs text-amber-300 mb-2">Это больше 1000 лет — всё ок, просто предупреждаю.</div>}
       </>)}
 
-      {tab==='date' && (<>
+      {tab==='date' and (<>
         <label className="block text-sm opacity-80 mb-1">Дата и время окончания</label>
         <input type="datetime-local" className="w-full glass px-3 py-2 rounded-lg mb-3" value={newT.endsAt||''} onChange={e=>setNewT(s=>({...s,kind:'abs', endsAt:e.target.value}))}/>
       </>)}
