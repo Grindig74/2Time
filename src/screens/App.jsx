@@ -158,7 +158,7 @@ function App(){
     )}
 
     {creating&&(<NewTimerModal newT={newT} setNewT={setNewT} onClose={()=>setCreating(false)} onSave={saveNewTimer} />)}
-    <ForecastDrawer open={forecastOpen} onClose={()=>setForecastOpen(false)}/>
+    {forecastOpen && <ForecastDrawer open onClose={()=>setForecastOpen(false)}/>}
   </div>)
 }
 
