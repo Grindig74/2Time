@@ -1,7 +1,7 @@
 {
-  "name": "2time-mvp-v6-3",
+  "name": "2time-v7-1",
   "private": true,
-  "version": "0.6.3",
+  "version": "0.7.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "firebase": "^10.12.0",
-    "framer-motion": "^11.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.26.0"

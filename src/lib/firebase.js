@@ -19,41 +19,10 @@ export const getDb=()=>{
   return db;
 }
 
-export async function saveTimerToCloud(id,data){
-  const database=getDb(); if(!database) return false;
-  await setDoc(doc(database,'timers',id), data, { merge:true });
-  return true;
-}
-export async function fetchTimerFromCloud(id){
-  const database=getDb(); if(!database) return null;
-  const snap=await getDoc(doc(database,'timers',id));
-  return snap.exists()?snap.data():null;
-}
-export async function deleteTimerFromCloud(id){
-  const database=getDb(); if(!database) return false;
-  await deleteDoc(doc(database,'timers',id));
-  return true;
-}
-
-export async function saveLinkToCloud(slug,data){
-  const database=getDb(); if(!database) return false;
-  await setDoc(doc(database,'links',slug), data, { merge:false });
-  return true;
-}
-export async function fetchLinkFromCloud(slug){
-  const database=getDb(); if(!database) return null;
-  const ref=doc(database,'links',slug);
-  const snap=await getDoc(ref);
-  return snap.exists()?{id:slug, ...snap.data()}:null;
-}
-export async function deleteLinkFromCloud(slug){
-  const database=getDb(); if(!database) return false;
-  await deleteDoc(doc(database,'links',slug));
-  return true;
-}
-export async function findLinksByTimerId(timerId){
-  const database=getDb(); if(!database) return [];
-  const q=query(collection(database,'links'), where('timerId','==',timerId));
-  const snap=await getDocs(q);
-  return snap.docs.map(d=>({ slug:d.id, ...d.data() }));
-}
+export async function saveTimerToCloud(id,data){ const database=getDb(); if(!database) return false; await setDoc(doc(database,'timers',id), data, { merge:true }); return true }
+export async function fetchTimerFromCloud(id){ const database=getDb(); if(!database) return null; const snap=await getDoc(doc(database,'timers',id)); return snap.exists()?snap.data():null }
+export async function deleteTimerFromCloud(id){ const database=getDb(); if(!database) return false; await deleteDoc(doc(database,'timers',id)); return true }
+export async function saveLinkToCloud(slug,data){ const database=getDb(); if(!database) return false; await setDoc(doc(database,'links',slug), data, { merge:false }); return true }
+export async function fetchLinkFromCloud(slug){ const database=getDb(); if(!database) return null; const ref=doc(database,'links',slug); const snap=await getDoc(ref); return snap.exists()?{id:slug, ...snap.data()}:null }
+export async function deleteLinkFromCloud(slug){ const database=getDb(); if(!database) return false; await deleteDoc(doc(database,'links',slug)); return true }
+export async function findLinksByTimerId(timerId){ const database=getDb(); if(!database) return []; const q=query(collection(database,'links'), where('timerId','==',timerId)); const snap=await getDocs(q); return snap.docs.map(d=>({ slug:d.id, ...d.data() })) }

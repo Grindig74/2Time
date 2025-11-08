@@ -1,24 +1,8 @@
-# 2Time MVP v6.3 — Pointer links + auto-cleanup
-**Что нового**
-- Короткая ссылка `/s/:slug` хранит только `{ type:'ptr', timerId }`.
-- Публичная страница подтягивает `timers/{id}`. Если таймер удалён — ссылка показывает «Таймер не найден».
-- Удаление таймера в приложении также удаляет все ссылки `links` с этим `timerId`.
+# 2Time v7.1 — Луны, облачность по часам и иконки
+- Переходы «день/ночь» считаются по восходу/закату из Open‑Meteo.
+- Лунная фаза (daily.moon_phase) визуализируется простым «маском» на луну.
+- Облачность берётся из почасовой `hourly.cloud_cover` для плотности облаков.
+- Простые иконки погоды (эмодзи) для прогноза.
+- Firebase: короткие ссылки‑указатели и авто‑чистка — как в v6.x.
 
-**Безопасные правила Firestore (клиент создаёт, но не редактирует):**
-```js
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /links/{slug} {
-      allow read: if true;
-      allow create: if request.auth == null && !exists(/databases/$(database)/documents/links/$(slug));
-      allow update, delete: if false;
-    }
-    match /timers/{id} {
-      allow read: if true;
-      allow create: if request.auth == null && !exists(/databases/$(database)/documents/timers/$(id));
-      allow update, delete: if false;
-    }
-  }
-}
-```
+Деплой как обычно: `npm i`, `npm run build`, Vercel берёт `dist`.
