@@ -4,10 +4,7 @@ export function dayNightGradient({sunrise,sunset}={}){
     const sr = sunrise? new Date(sunrise) : null
     const ss = sunset? new Date(sunset) : null
     if(sr && ss){
-      if(now < sr || now > ss){ // night
-        return 'linear-gradient(180deg,#040711,#0b0f1a 60%)'
-      }
-      // day
+      if(now < sr || now > ss){ return 'linear-gradient(180deg,#040711,#0b0f1a 60%)' }
       return 'linear-gradient(180deg,#0b0f1a,#0c1d37 60%)'
     }
   }catch{}

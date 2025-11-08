@@ -1,17 +1,10 @@
-# 2Time v7.1 — Луна, облачность по часам, точный день/ночь
-Новое:
-- Переход день/ночь от **реального sunrise/sunset** (Open‑Meteo `daily.sunrise/sunset`).
-- Луна: используем **`daily.moon_phase`** (0=новая, 0.5=полнолуние) — рисуем фазу.
-- Интенсивность облаков от **`hourly.cloud_cover`** (насыщенность облаков/звёзд).
-- Мини‑иконки погоды в прогнозе и на публичной карточке таймера.
-- Ссылки по‑прежнему pointer `/s/:slug` (работают без логина, если деплой публичный).
-
-Vercel (чтобы ссылки не просили логин):
-- В проекте → **Settings → Deployments → Privacy**:
-  - **Preview Deployments** = *Public* (включено для всех, без авторизации).
-  - Если стоит *Members only* — Vercel попросит логин при открытии `*.vercel.app`.
-- Или прикрути свой домен (Domains) и делай Production деплой — он всегда публичный.
-- `vercel.json` содержит SPA‑rewrites, так что роуты `/s/:slug` работают без 404.
+# 2Time v7.1.2 — стабильная погода
+Исправления:
+- `WeatherProvider.refresh(nextCoords)` — запрос идёт по новым координатам, UI не «чернеет» при смене города.
+- `ForecastDrawer` — `z-50`, не скрываем старые данные во время загрузки, явные сообщения `Загружаю…/Ошибка`.
+- Включены предыдущие улучшения: sunrise/sunset, moon phase, hourly cloud cover, иконки погоды.
 
 Деплой:
-- ENV `VITE_FIREBASE_*` как раньше. `npm i && npm run build`.
+- `npm i && npm run build` → `dist`.
+- Проверь **Vercel → Settings → Deployments → Privacy** = *Public* для превью.
+- ENV `VITE_FIREBASE_*` без изменений.

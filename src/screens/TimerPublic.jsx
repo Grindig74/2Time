@@ -58,7 +58,6 @@ function TimerPublic(){
 
   const bg=useMemo(()=>timer?.bg||backgroundForTitle(timer?.title||''),[timer])
 
-  // прогноз для даты окончания, если попадает в окно daily
   let endForecast=null
   if(data?.daily?.time && timer?.kind==='abs'){
     const fireDate = new Date(timer.endsAt).toISOString().slice(0,10)
@@ -87,8 +86,8 @@ function TimerPublic(){
             <div className='text-2xl font-bold mb-2'>{timer.title}</div>
             {endForecast && (
               <div className='text-xs opacity-80 mb-2'>
-                <WeatherIcon code={codeToIcon(endForecast.code)}/>
-                {' '}В день окончания: {endForecast.tmin}…{endForecast.tmax}° · осадки {endForecast.precip} мм
+                <WeatherIcon code={codeToIcon(endForecast.code)}/>{' '}
+                В день окончания: {endForecast.tmin}…{endForecast.tmax}° · осадки {endForecast.precip} мм
               </div>
             )}
             <TimerCard t={timer}/>

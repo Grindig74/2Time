@@ -7,24 +7,25 @@ function dayName(dstr){
   const d=new Date(dstr); return d.toLocaleDateString('ru-RU',{weekday:'short', day:'2-digit'})
 }
 export default function ForecastDrawer({open,onClose}){
-  const { data, place, loading, setManualLocation, refresh } = React.useContext(WeatherCtx)
+  const { data, place, loading, setManualLocation, refresh, error } = React.useContext(WeatherCtx)
   return (
-    <div className={`fixed inset-0 ${open?'pointer-events-auto':'pointer-events-none'}`}>
+    <div className={`fixed inset-0 ${open?'pointer-events-auto':'pointer-events-none'} z-50`}>
       <div className={`absolute inset-0 bg-black/50 transition-opacity ${open?'opacity-100':'opacity-0'}`} onClick={onClose}/>
-      <div className={`absolute bottom-0 left-0 right-0 bg-[#0b0f1a] border-t border-white/10 rounded-t-2xl p-4 transition-transform ${open?'translate-y-0':'translate-y-full'}`}>
+      <div className={`absolute bottom-0 left-0 right-0 bg-[#0b0f1a] border-t border-white/10 rounded-t-2xl p-4 transition-transform ${open?'translate-y-0':'translate-y-full'} z-50`}>
         <div className="flex items-center justify-between mb-2">
           <div className="text-lg font-semibold">Погода — {place||'—'}</div>
           <div className="flex gap-2">
-            <button onClick={refresh} className="text-xs bg-white/10 px-2 py-1 rounded">Обновить</button>
+            <button onClick={()=>refresh()} className="text-xs bg-white/10 px-2 py-1 rounded">Обновить</button>
             <button onClick={onClose} className="text-xs bg-white/10 px-2 py-1 rounded">Закрыть</button>
           </div>
         </div>
         <div className="mb-3">
-          <input placeholder="Сменить город (напр. Амстердам)" className="w-full glass px-3 py-2 rounded" onKeyDown={async(e)=>{if(e.key==='Enter'){const ok=await setManualLocation(e.currentTarget.value); if(ok){ e.currentTarget.value=''; refresh(); }}}}/>
+          <input placeholder="Сменить город (напр. Амстердам)" className="w-full glass px-3 py-2 rounded" onKeyDown={async(e)=>{if(e.key==='Enter'){const ok=await setManualLocation(e.currentTarget.value); if(ok){ e.currentTarget.value=''; }}}}/>
           <div className="text-xs opacity-70 mt-1">Нажми Enter для применения</div>
         </div>
-        {loading && <div className="opacity-70">Загружаю…</div>}
-        {!loading && data && (
+        {error && <div className="text-sm text-amber-300 mb-2">{error}</div>}
+        {loading && <div className="opacity-80 mb-2">Загружаю…</div>}
+        {data && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {data.daily.time.map((t,i)=>(
               <div key={t} className="glass p-3 rounded-xl">

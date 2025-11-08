@@ -11,33 +11,43 @@ export function WeatherProvider({children}){
   const [loading,setLoading]=React.useState(false)
   const [error,setError]=React.useState(null)
 
+  const refresh = async (next=null)=>{
+    const c = next || coords
+    if(!c) return
+    try{
+      setLoading(true); setError(null)
+      const j = await fetchWeather(c.lat, c.lon, 16)
+      setData(j) // не обнуляем на время загрузки
+    }catch(e){
+      setError('Ошибка погоды')
+    }finally{
+      setLoading(false)
+    }
+  }
+
   const setManualLocation = async (q)=>{
     const list = await searchCity(q)
     if(!list.length){ setError('Город не найден'); return false }
     const top = list[0]
-    setCoords({lat:top.lat, lon:top.lon}); setPlace(top.name)
-    saveState('weather.coords',{lat:top.lat, lon:top.lon}); saveState('weather.place',top.name)
+    const next = { lat: top.lat, lon: top.lon }
+    setCoords(next); setPlace(top.name)
+    saveState('weather.coords', next); saveState('weather.place', top.name)
+    await refresh(next)
     return true
   }
 
-  const refresh = async ()=>{
-    if(!coords) return
-    try{
-      setLoading(true); setError(null)
-      const j = await fetchWeather(coords.lat, coords.lon, 16)
-      setData(j)
-    }catch(e){ setError('Ошибка погоды') }
-    finally{ setLoading(false) }
-  }
-
   React.useEffect(()=>{(async()=>{
-    if(coords){ refresh(); return }
+    if(coords){ await refresh(coords); return }
     const g = await geolocate()
-    if(g){ setCoords(g); saveState('weather.coords',g); const name=await reverseGeocode(g.lat,g.lon); if(name){ setPlace(name); saveState('weather.place',name) } ; refresh(); return }
+    if(g){
+      setCoords(g); saveState('weather.coords',g);
+      const name=await reverseGeocode(g.lat,g.lon); if(name){ setPlace(name); saveState('weather.place',name) }
+      await refresh(g); return
+    }
     const fallback={lat:55.1644, lon:61.4368}
     setCoords(fallback); saveState('weather.coords',fallback)
     const name='Челябинск, Россия'; setPlace(name); saveState('weather.place',name)
-    refresh()
+    await refresh(fallback)
   })()},[])
 
   const currentCode = data?.current?.weather_code
@@ -51,7 +61,6 @@ export function WeatherProvider({children}){
     moonPhase=data.daily.moon_phase?.[0] ?? null
   }
   if(data?.hourly){
-    // use last hourly sample as "now" cloud cover
     const n = data.hourly.cloud_cover?.length||0
     if(n>0) cloudNow = data.hourly.cloud_cover[n-1]||0
   }
