@@ -1,17 +1,1 @@
-export function dayNightGradient({sunrise,sunset}={}){
-  try{
-    const now = new Date()
-    const sr = sunrise? new Date(sunrise) : null
-    const ss = sunset? new Date(sunset) : null
-    if(sr && ss){
-      if(now < sr || now > ss){ return 'linear-gradient(180deg,#040711,#0b0f1a 60%)' }
-      return 'linear-gradient(180deg,#0b0f1a,#0c1d37 60%)'
-    }
-  }catch{}
-  const h= (new Date()).getHours()
-  if(h<=5)return'linear-gradient(180deg,#040711,#0b0f1a 60%)'
-  if(h<=8)return'linear-gradient(180deg,#1B2845,#17315c 60%)'
-  if(h<=17)return'linear-gradient(180deg,#0b0f1a,#0c1d37 60%)'
-  return'linear-gradient(180deg,#1a1130,#0b0f1a 60%)'
-}
-export function backgroundForTitle(title=''){const t=title.toLowerCase();if(t.includes('море')||t.includes('sea')||t.includes('ocean'))return'linear-gradient(135deg,rgba(0,172,193,0.25),rgba(12,31,59,0.6))';if(t.includes('день рождения')||t.includes('birthday'))return'linear-gradient(135deg,rgba(255,105,180,0.25),rgba(71,0,110,0.6))';if(t.includes('работ')||t.includes('work'))return'linear-gradient(135deg,rgba(255,128,0,0.2),rgba(0,0,0,0.35))';if(t.includes('путеш')||t.includes('trip')||t.includes('travel'))return'linear-gradient(135deg,rgba(0,255,200,0.15),rgba(0,80,120,0.45))';return'radial-gradient(120% 120% at 0% 0%, rgba(125,249,255,0.08), rgba(192,132,252,0.10))'}
+export const backgroundForTitle=()=>''
